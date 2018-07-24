@@ -34,7 +34,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         email_ET = findViewById(R.id.email_login);
         password_ET = findViewById(R.id.password_login);
         email_ET.setText("kokwei217@hotmail.com");
-        password_ET.setText("xopalx217");
 
         findViewById(R.id.btn_login).setOnClickListener(this);
 
