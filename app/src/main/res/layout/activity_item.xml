@@ -35,19 +35,20 @@
             android:onClick="signOut"
             android:text="Sign Out" />
 
-        <EditText
-            android:id="@+id/remarks_item"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="150dp"
-            android:hint="comments" />
+        <!--<Button-->
+            <!--android:id="@+id/checkLocation"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="50dp"-->
+            <!--android:layout_marginTop="130dp"-->
+            <!--android:text="check Location"-->
+            <!--android:onClick="checkLocation"/>-->
 
         <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="200dp"
-            android:onClick="writeDatabase"
-            android:text="save" />
+            android:onClick="listLocation"
+            android:text="Location List" />
 
         <Button
             android:layout_width="match_parent"
@@ -58,6 +59,8 @@
 
         <TextView
             android:id="@+id/data_tv"
+            android:textSize="16sp"
+            android:layout_marginStart="20dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="350dp" />
