@@ -2,23 +2,17 @@ package com.example.kokwei217.firebae;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
-import android.nfc.Tag;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.renderscript.Sampler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,17 +22,12 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
@@ -56,18 +45,18 @@ public class ItemActivity extends AppCompatActivity {
     ArrayList<String> bssidList;
     ArrayList<Integer> rssiList;
 
-    TextView data_TV;
+    TextView data_TV, location_TV;
     int u = 0;
     int j = 0;
     int count = 0;
+    Boolean scanFlag = true;
 
     //Wifi Data from database
     StringBuilder sb;
     ArrayList<String> listOfRoom;
     ArrayList<WifiFingerprints> wifiFingerprints;
     HashMap<String, Integer> wifiHashMap;
-    ArrayList<HashMap<String, Integer>> arrayList;
-
+    HashMap<String, Double> hashmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,10 +65,12 @@ public class ItemActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         data_TV = findViewById(R.id.data_tv);
+        location_TV = findViewById(R.id.location_tv);
 
         listOfRoom = new ArrayList<>();
         wifiFingerprints = new ArrayList<>();
         sb = new StringBuilder();
+        hashmap = new HashMap<>();
 
         auth = FirebaseAuth.getInstance();
         database = FirebaseDatabase.getInstance();
@@ -90,18 +81,23 @@ public class ItemActivity extends AppCompatActivity {
     }
 
     public void initializeWifi() {
-        handler = new Handler();
-        wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        if (scanFlag) {
+            handler = new Handler();
+            wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
-        scanWifi();
-        runnable = new Runnable() {
-            @Override
-            public void run() {
-                handler.postDelayed(this, 4000);
-                scanWifi();
-            }
-        };
-        handler.post(runnable);
+            scanWifi();
+            runnable = new Runnable() {
+                @Override
+                public void run() {
+                    handler.postDelayed(this, 4000);
+                    scanWifi();
+//                    readData();
+                }
+            };
+            handler.post(runnable);
+        } else {
+            handler.removeCallbacks(runnable);
+        }
     }
 
     public void scanWifi() {
@@ -125,37 +121,42 @@ public class ItemActivity extends AppCompatActivity {
         }
     }
 
-    public void signOut(View view) {
+    public void checkLocation(View view) {
 //        auth.signOut();
 //        finish();
 //        Intent intent = new Intent(this, MainActivity.class);
 //        startActivity(intent);
-        wifiHashMap = new HashMap<>();
-        wifiHashMap.put("house3", 10);
-        wifiHashMap.put("mcd", 40);
-        sb = new StringBuilder();
-        Iterator iterator = wifiHashMap.entrySet().iterator();
-
-        for (HashMap.Entry entry : wifiHashMap.entrySet()) {
-            sb.append(entry.getKey() + ":" + entry.getValue() + "\n");
-            data_TV.setText(sb);
-        }
-//        while (iterator.hasNext()){
-//            HashMap.Entry entry = (HashMap.Entry)iterator.next();
-//            sb.append(entry.getKey() + ":" + entry.getValue() +"\n");
-//            data_TV.setText(sb);
-//        }
+        whereAmI();
     }
 
-    public void listLocation(View view) {
-        StringBuilder roomSB = new StringBuilder();
-        for (String room : listOfRoom) {
-            roomSB.append(room + "\n");
+    public void whereAmI() {
+        Map.Entry<String, Double> min = null;
+        for (Map.Entry<String, Double> entry : hashmap.entrySet()) {
+            if (min == null || min.getValue() > entry.getValue()) {
+                min = entry;
+            }
         }
-        data_TV.setText(roomSB);
+        location_TV.setText(min.getKey());
+    }
+
+    public void flag(View view) {
+//        StringBuilder roomSB = new StringBuilder();
+//        for (String room : listOfRoom) {
+//            roomSB.append(room + "\n");
+//        }
+//        data_TV.setText(roomSB);
+        scanFlag = !scanFlag;
+        Toast.makeText(this, "State Changed", Toast.LENGTH_SHORT).show();
+        initializeWifi();
+
     }
 
     public void readDatabase(View view) {
+        readData();
+    }
+
+    public void readData() {
+        hashmap = new HashMap<>();
         listOfRoom = new ArrayList<>();
         wifiFingerprints = new ArrayList<>();
         scanWifi();
@@ -163,8 +164,7 @@ public class ItemActivity extends AppCompatActivity {
         myRef.addChildEventListener(childEventListener);
         sb = new StringBuilder();
         u = 0;
-        j = 0;
-        count = 0;
+
     }
 
     ChildEventListener childEventListener = new ChildEventListener() {
@@ -175,10 +175,9 @@ public class ItemActivity extends AppCompatActivity {
                     for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
                         listOfRoom.add(dataSnapshot.getKey());
                         dataSnapshot.getRef().addListenerForSingleValueEvent(valueEventListener);
-                        j++;
                     }
                 } catch (Exception e) {
-                    Toast.makeText(ItemActivity.this, "error in", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ItemActivity.this, "error", Toast.LENGTH_SHORT).show();
                     e.printStackTrace();
                 }
             } else {
@@ -210,71 +209,68 @@ public class ItemActivity extends AppCompatActivity {
     ValueEventListener valueEventListener = new ValueEventListener() {
         @Override
         public void onDataChange(@NonNull DataSnapshot snapshot) {
-            for (final DataSnapshot dataSnapshot : snapshot.getChildren()) {
-                //At the building level
+            //for each snapshot in the main building level
+            for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+                double score = 0;
                 int correctPair = 0;
+                int count = 0;
                 String tag = String.valueOf(dataSnapshot.child("tag").getValue());
                 sb.append(tag + "\n");
 
+
+                // for each snapshot of building, get each snapshot of dims
+                for (DataSnapshot dims : dataSnapshot.child("dims").getChildren()) {
+                    String macDatabase = dims.getKey();
+                    int rssiRemote = Integer.parseInt(String.valueOf(dims.getValue()));
+                    if (rssiRemote > -80 && !bssidList.contains(macDatabase)) {
+                        count++;
+                        int rssiDiff = Math.abs(rssiRemote);
+                        score = (score + rssiDiff);
+                        sb.append(macDatabase + ":  " + rssiDiff + " not in local " + "\n");
+
+                    }
+                }
+
                 //Iterates down the array off local Mac Address list
-                for(int i =0; i < rssiList.size(); i++) {
+                for (int i = 0; i < rssiList.size(); i++) {
                     int rssiLocal = rssiList.get(i);
                     String mac = bssidList.get(i);
 
-                    //If local mac address matches with database
+                    //If local mac address matches with database, find difference in rssi
                     if (dataSnapshot.child("dims").child(mac).exists()) {
                         String rssiRemote = String.valueOf(dataSnapshot.child("dims").child(mac).getValue());
                         int rssiDiff = Math.abs(Integer.parseInt(rssiRemote) - rssiLocal);
-                        if (rssiDiff <= 10){
-                            correctPair++;
-                            sb.append(mac + ": " +  rssiDiff + ",   " +"\n");
-                            data_TV.setText(sb);
+                        correctPair++;
+                        count++;
+                        score = (score + rssiDiff);
+                        sb.append(mac + ": " + rssiDiff + ",   " + "\n");
+                        data_TV.setText(sb);
+
+                    } else if (!dataSnapshot.child("dims").child(mac).exists()) {
+                        int rssiDiff;
+                        if (rssiLocal <=-90){
+                            rssiDiff = (Math.abs(rssiLocal) - 40);
+                        } else if (rssiLocal <= -80 ){
+                            rssiDiff = (Math.abs(rssiLocal) - 20);
                         }
-                    }
-                    else if (rssiLocal >-80 && !dataSnapshot.child("dims").child(mac).exists()){
-                        int rssiDiff = Math.abs(rssiLocal);
-                        sb.append(mac + ":  " + rssiDiff + " doest not exist here " + "\n");
+                        else{
+                            rssiDiff = Math.abs(rssiLocal);
+                        }
+                        score = (score + rssiDiff);
+                        count++;
+                        sb.append(mac + ":  " + rssiDiff + " not in database " + "\n");
                     }
                 }
-                sb.append (String.valueOf(correctPair) + "\n\n");
+                hashmap.put(tag, score);
+                sb.append(String.valueOf(correctPair) + ",  " + score + "\n\n");
                 data_TV.setText(sb);
-//                    dataSnapshot.child("dims").getRef().addListenerForSingleValueEvent(new ValueEventListener() {
-//
-//                        @Override
-//                        public void onDataChange(@NonNull DataSnapshot dimsData) {
-//                            for (int i = 0; i < rssiList.size(); i++) {
-//                                for (DataSnapshot dims : dimsData.getChildren()) {
-//
-//                                    String bssid = dims.getKey();
-//                                    String rssi = String.valueOf(dims.getValue());
-//                                    String tag = String.valueOf(dataSnapshot.child("tag").getValue());
-//                                    WifiFingerprints fingerprints = new WifiFingerprints(bssid, rssi);
-//                                    wifiFingerprints.add(fingerprints);
-//
-//                                    if (bssidList.get(i).equals(wifiFingerprints.get(u).bssid)) {
-//                                        int rssiValue = Integer.parseInt(wifiFingerprints.get(u).rssi);
-//                                        int rssiDiff = rssiValue - rssiList.get(i);
-//                                        if (rssiList.get(i) >= -80 && (rssiDiff >= -10 && rssiDiff <= 10)) {
-//                                            count++;
-//                                            sb.append(bssidList.get(i) + ", " + rssiDiff + ", " + tag + "\n");
-//                                        } else if (rssiList.get(i) < -80 && (rssiDiff >= -10 && rssiDiff <= 10)) {
-//                                            count++;
-//                                            sb.append(bssidList.get(i) + ", " + rssiDiff + ", " + tag + ", Weak Signal" + "\n");
-//                                        }
-//                                    }
-//                                    u++;
-//                                }
-//                            }
-//                            data_TV.setText(sb + String.valueOf(count));
-//                        }
-//
-//                        @Override
-//                        public void onCancelled(@NonNull DatabaseError databaseError) {
-//
-//                        }
-//                    });
             }
 
+
+
+            if (hashmap.size() == listOfRoom.size()) {
+                whereAmI();
+            }
         }
 
         @Override

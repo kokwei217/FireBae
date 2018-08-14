@@ -32,23 +32,26 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="60dp"
-            android:onClick="signOut"
-            android:text="Sign Out" />
+            android:onClick="checkLocation"
+            android:text="Where am I?" />
 
-        <!--<Button-->
-            <!--android:id="@+id/checkLocation"-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="50dp"-->
-            <!--android:layout_marginTop="130dp"-->
-            <!--android:text="check Location"-->
-            <!--android:onClick="checkLocation"/>-->
+        <TextView
+            android:id="@+id/location_tv"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="130dp"
+            android:gravity="center"
+            android:textSize= "30sp"
+            android:onClick="checkLocation"
+            android:text="check Location" />
 
         <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="200dp"
-            android:onClick="listLocation"
-            android:text="Location List" />
+            android:onClick="flag"
+            android:text="Change State" />
 
         <Button
             android:layout_width="match_parent"
@@ -59,11 +62,11 @@
 
         <TextView
             android:id="@+id/data_tv"
-            android:textSize="16sp"
-            android:layout_marginStart="20dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="350dp" />
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="350dp"
+            android:textSize="16sp" />
 
 
     </android.support.design.widget.CoordinatorLayout>
